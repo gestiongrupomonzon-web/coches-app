@@ -24,7 +24,7 @@
 
     try {
       // URL del servicio web de geoposición
-      const url = `https://api.allorigins.win/get?url=${encodeURIComponent(`http://gps14.geolocaliza.com/gps/ws.php?wsKeyGrupo=still&wsAcc=vl&id=${id}&format=json`)}`;
+      const url = `https://gps14.geolocaliza.com/gps/ws.php?wsKeyGrupo=still&wsAcc=vl&id=${id}&format=json`)}`;
       
       const response = await fetch(url);
       if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
