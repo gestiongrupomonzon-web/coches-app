@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>GPS Vehículos</title>
+</head>
+<body>
+  <h2>Consulta de Geoposición</h2>
+  <div id="mensaje">Consultando datos...</div>
+
+  <script>
+    // 👉 1. Obtener el parámetro id de la URL
+    function getParameterByName(name) {
+      const url = new URL(window.location.href);
+      return url.searchParams.get(name);
+    }
+
+    const vehiculoId = getParameterByName("id");
+    const mensaje = document.getElementById("mensaje");
+
+    if (!vehiculoId) {
+      mensaje.textContent = "Error: No se proporcionó un ID de vehículo en la URL.";
+    } else {
+      mensaje.textContent = `Buscando posición del vehículo con ID: ${vehiculoId}...`;
+
+      // 👉 2. Llamada al servicio web con fetch
+      const apiUrl = `http://gps14.geolocaliza.com/gps/ws.php?wsKeyGrupo=still&wsAcc=vl&id=${vehiculoId}&format=json`;
+
+      fetch(apiUrl)
+        .then(response => {
+          if (!response.ok) throw new Error("Error al conectar con el servicio web");
+          return response.json();
+        })
+        .then(data => {
+          console.log("Respuesta API:", data);
+
+          // 👉 3. Validar la estructura del JSON
+          if (!data || !data.lat || !data.long) {
+            throw new Error("La respuesta no contiene lat/long");
+          }
+
+          const lat = data.lat;
+          const lon = data.long;
+
+          mensaje.textContent = `Vehículo ${vehiculoId}: Lat=${lat}, Long=${lon}`;
+
+          // 👉 4. Abrir Google Maps en una nueva pestaña
+          const mapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
+          window.open(mapsUrl, "_blank");
+        })
+        .catch(error => {
+          console.error("Error:", error);
+          mensaje.textContent = "Error al obtener la posición: " + error.message;
+        });
+    }
+  </script>
+</body>
+</html>
