@@ -26,7 +26,7 @@
 <script>
 async function obtenerDatosGPS(id) {
   try {
-    const urlWS = `https://gps14.geolocaliza.com/gps/ws.php?wsKeyGrupo=still&wsAcc=vl&id=${id}&format=json`;
+    const urlWS = `http://gps14.geolocaliza.com/gps/ws.php?wsKeyGrupo=still&wsAcc=vl&id=${id}&format=json`;
     const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(urlWS)}`;
     
     const response = await fetch(proxyUrl);
