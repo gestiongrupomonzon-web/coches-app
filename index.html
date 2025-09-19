@@ -1,58 +1,87 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>GPS Vehículos</title>
+<meta charset="UTF-8">
+<title>Vehículos GPS</title>
+<style>
+  table, th, td { border: 1px solid black; border-collapse: collapse; padding: 4px; }
+  th { background-color: #eee; }
+  button { padding: 4px 8px; }
+</style>
 </head>
 <body>
-  <h2>Consulta de Geoposición</h2>
-  <div id="mensaje">Consultando datos...</div>
+<h2>Vehículos GPS</h2>
+<table id="tablaVehiculos">
+  <thead>
+    <tr>
+      <th>NoFabricacin</th>
+      <th>Ver en Google Maps</th>
+    </tr>
+  </thead>
+  <tbody>
+    <!-- Filas generadas dinámicamente -->
+  </tbody>
+</table>
 
-  <script>
-    // 👉 1. Obtener el parámetro id de la URL
-    function getParameterByName(name) {
-      const url = new URL(window.location.href);
-      return url.searchParams.get(name);
-    }
+<script>
+async function obtenerDatosGPS(id) {
+  try {
+    const urlWS = `https://gps14.geolocaliza.com/gps/ws.php?wsKeyGrupo=still&wsAcc=vl&id=${id}&format=json`;
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(urlWS)}`;
+    
+    const response = await fetch(proxyUrl);
+    const dataWrapped = await response.json();
+    const gpsData = JSON.parse(dataWrapped.contents);
 
-    const vehiculoId = getParameterByName("id");
-    const mensaje = document.getElementById("mensaje");
+    return gpsData; // Array con los datos
+  } catch (error) {
+    console.error('Error al obtener GPS:', error);
+    return null;
+  }
+}
 
-    if (!vehiculoId) {
-      mensaje.textContent = "Error: No se proporcionó un ID de vehículo en la URL.";
-    } else {
-      mensaje.textContent = `Buscando posición del vehículo con ID: ${vehiculoId}...`;
+function abrirGoogleMaps(lat, lon) {
+  const url = `https://www.google.com/maps?q=${lat},${lon}`;
+  window.open(url, '_blank');
+}
 
-      // 👉 2. Llamada al servicio web con fetch
-      const apiUrl = `https://gps14.geolocaliza.com/gps/ws.php?wsKeyGrupo=still&wsAcc=vl&id=${vehiculoId}&format=json`;
+// Ejemplo de datos de vehículos obtenidos desde Power Automate o BC
+const vehiculos = [
+  { NoFabricacin: '2677-FRH', gpsId: '6170' },
+  { NoFabricacin: '3662-DBR', gpsId: '6171' }
+];
 
-      fetch(apiUrl)
-        .then(response => {
-          if (!response.ok) throw new Error("Error al conectar con el servicio web");
-          return response.json();
-        })
-        .then(data => {
-          console.log("Respuesta API:", data);
+async function generarTabla() {
+  const tbody = document.getElementById('tablaVehiculos').querySelector('tbody');
+  tbody.innerHTML = '';
 
-          // 👉 3. Validar la estructura del JSON
-          if (!data || !data.lat || !data.long) {
-            throw new Error("La respuesta no contiene lat/long");
-          }
+  for (const veh of vehiculos) {
+    const tr = document.createElement('tr');
+    const tdNo = document.createElement('td');
+    tdNo.textContent = veh.NoFabricacin;
 
-          const lat = data.lat;
-          const lon = data.long;
+    const tdBoton = document.createElement('td');
+    const btn = document.createElement('button');
+    btn.textContent = 'Ver en Maps';
+    btn.onclick = async () => {
+      const gpsData = await obtenerDatosGPS(veh.gpsId);
+      if (gpsData && gpsData.length > 0) {
+        abrirGoogleMaps(gpsData[0].lat, gpsData[0].long); // Usamos gpsData.long
+      } else {
+        alert('No se encontró la posición GPS');
+      }
+    };
+    tdBoton.appendChild(btn);
 
-          mensaje.textContent = `Vehículo ${vehiculoId}: Lat=${lat}, Long=${lon}`;
+    tr.appendChild(tdNo);
+    tr.appendChild(tdBoton);
+    tbody.appendChild(tr);
+  }
+}
 
-          // 👉 4. Abrir Google Maps en una nueva pestaña
-          const mapsUrl = `https://www.google.com/maps?q=${lat},${lon}`;
-          window.open(mapsUrl, "_blank");
-        })
-        .catch(error => {
-          console.error("Error:", error);
-          mensaje.textContent = "Error al obtener la posición: " + error.message;
-        });
-    }
-  </script>
+// Generamos la tabla al cargar
+window.onload = generarTabla;
+</script>
 </body>
 </html>
+
