@@ -24,7 +24,7 @@
       mensaje.textContent = `Buscando posición del vehículo con ID: ${vehiculoId}...`;
 
       // 👉 2. Llamada al servicio web con fetch
-      const apiUrl = `http://gps14.geolocaliza.com/gps/ws.php?wsKeyGrupo=still&wsAcc=vl&id=${vehiculoId}&format=json`;
+      const apiUrl = `https://gps14.geolocaliza.com/gps/ws.php?wsKeyGrupo=still&wsAcc=vl&id=${vehiculoId}&format=json`;
 
       fetch(apiUrl)
         .then(response => {
