@@ -1,87 +1,63 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Vehículos GPS</title>
-<style>
-  table, th, td { border: 1px solid black; border-collapse: collapse; padding: 4px; }
-  th { background-color: #eee; }
-  button { padding: 4px 8px; }
-</style>
+  <meta charset="UTF-8">
+  <title>Vehículo GPS</title>
 </head>
 <body>
-<h2>Vehículos GPS</h2>
-<table id="tablaVehiculos">
-  <thead>
-    <tr>
-      <th>NoFabricacin</th>
-      <th>Ver en Google Maps</th>
-    </tr>
-  </thead>
-  <tbody>
-    <!-- Filas generadas dinámicamente -->
-  </tbody>
-</table>
+
+<h2>Obteniendo ubicación del vehículo...</h2>
 
 <script>
-async function obtenerDatosGPS(id) {
-  try {
-    const urlWS = `http://gps14.geolocaliza.com/gps/ws.php?wsKeyGrupo=still&wsAcc=vl&id=${id}&format=json`;
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(urlWS)}`;
-    
-    const response = await fetch(proxyUrl);
-    const dataWrapped = await response.json();
-    const gpsData = JSON.parse(dataWrapped.contents);
-
-    return gpsData; // Array con los datos
-  } catch (error) {
-    console.error('Error al obtener GPS:', error);
-    return null;
+  // Función para leer el parámetro 'id' de la URL
+  function obtenerParametro(nombre) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(nombre);
   }
-}
 
-function abrirGoogleMaps(lat, lon) {
-  const url = `https://www.google.com/maps?q=${lat},${lon}`;
-  window.open(url, '_blank');
-}
+  // Función para obtener la geoposición del vehículo
+  async function obtenerPosicionVehiculo(id) {
+    if (!id) {
+      alert("No se proporcionó ID del vehículo en la URL");
+      return;
+    }
 
-// Ejemplo de datos de vehículos obtenidos desde Power Automate o BC
-const vehiculos = [
-  { NoFabricacin: '2677-FRH', gpsId: '6170' },
-  { NoFabricacin: '3662-DBR', gpsId: '6171' }
-];
+    try {
+      // URL del servicio web de geoposición
+      const url = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://gps14.geolocaliza.com/gps/ws.php?wsKeyGrupo=still&wsAcc=vl&id=${id}&format=json`)}`;
+      
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
 
-async function generarTabla() {
-  const tbody = document.getElementById('tablaVehiculos').querySelector('tbody');
-  tbody.innerHTML = '';
+      const data = await response.json();
+      const gpsData = JSON.parse(data.contents);
 
-  for (const veh of vehiculos) {
-    const tr = document.createElement('tr');
-    const tdNo = document.createElement('td');
-    tdNo.textContent = veh.NoFabricacin;
-
-    const tdBoton = document.createElement('td');
-    const btn = document.createElement('button');
-    btn.textContent = 'Ver en Maps';
-    btn.onclick = async () => {
-      const gpsData = await obtenerDatosGPS(veh.gpsId);
-      if (gpsData && gpsData.length > 0) {
-        abrirGoogleMaps(gpsData[0].lat, gpsData[0].long); // Usamos gpsData.long
-      } else {
-        alert('No se encontró la posición GPS');
+      if (!gpsData.lat || !gpsData.long) {
+        alert("No se pudo obtener la posición GPS del vehículo");
+        return;
       }
-    };
-    tdBoton.appendChild(btn);
 
-    tr.appendChild(tdNo);
-    tr.appendChild(tdBoton);
-    tbody.appendChild(tr);
+      // Guardar posición en localStorage
+      localStorage.setItem('ultimaPosicion', JSON.stringify({ lat: gpsData.lat, long: gpsData.long }));
+
+      // Abrir Google Maps con la posición
+      const mapsUrl = `https://www.google.com/maps?q=${gpsData.lat},${gpsData.long}`;
+      window.open(mapsUrl, "_blank");
+
+    } catch (err) {
+      console.error("Error al obtener la posición:", err);
+      alert("Error al obtener la posición GPS");
+    }
   }
-}
 
-// Generamos la tabla al cargar
-window.onload = generarTabla;
+  // Ejecutar al cargar la página
+  window.onload = function() {
+    const idVehiculo = obtenerParametro('id');
+    obtenerPosicionVehiculo(idVehiculo);
+  };
 </script>
+
 </body>
 </html>
+
 
